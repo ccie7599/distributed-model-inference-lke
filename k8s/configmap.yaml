@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bert-inference-config
+  namespace: bert-inference
+  labels:
+    app: bert-inference
+data:
+  # Model configuration
+  MODEL_NAME: "google-bert/bert-base-uncased"
+  MODEL_PATH: "/models/bert-base-uncased"
+
+  # ONNX Runtime settings
+  ONNX_EXECUTION_PROVIDER: "CUDAExecutionProvider"
+  ONNX_INTRA_OP_THREADS: "4"
+  ONNX_INTER_OP_THREADS: "2"
+
+  # Inference server settings
+  SERVER_HOST: "0.0.0.0"
+  SERVER_PORT: "8080"
+  SERVER_WORKERS: "1"
+
+  # Model parameters
+  MAX_SEQUENCE_LENGTH: "512"
+  BATCH_SIZE: "8"
