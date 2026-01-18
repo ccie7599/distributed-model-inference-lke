@@ -32,7 +32,16 @@ This project deploys a BERT model inference service using ONNX Runtime on Linode
 │   ├── deployment.yaml # BERT inference deployment
 │   ├── service.yaml    # Service definitions
 │   ├── hpa.yaml        # Horizontal Pod Autoscaler
-│   └── kustomization.yaml
+│   ├── kustomization.yaml
+│   └── monitoring/     # Observability stack
+│       ├── prometheus-*.yaml   # Prometheus deployment
+│       ├── grafana-*.yaml      # Grafana with dashboards
+│       └── dcgm-exporter.yaml  # NVIDIA GPU metrics
+│
+├── app/                # Inference server with metrics
+│   ├── inference_server.py  # FastAPI server with Prometheus instrumentation
+│   ├── Dockerfile
+│   └── requirements.txt
 │
 └── tests/              # Test scripts
     ├── smoke_test.sh   # Quick connectivity and health checks
@@ -128,6 +137,102 @@ The HPA automatically scales pods based on CPU/memory utilization. To manually s
 
 ```bash
 kubectl -n bert-inference scale deployment bert-inference --replicas=2
+```
+
+## Observability
+
+The project includes a complete observability stack with Prometheus, Grafana, and NVIDIA DCGM Exporter.
+
+### Deploy Monitoring Stack
+
+```bash
+# Deploy Prometheus, Grafana, and DCGM Exporter
+kubectl apply -k k8s/monitoring/
+
+# Verify deployments
+kubectl -n monitoring get pods
+
+# Get Grafana external IP
+kubectl -n monitoring get svc grafana-external
+```
+
+### Access Grafana
+
+1. Open `http://<GRAFANA-EXTERNAL-IP>` in your browser
+2. Login with:
+   - Username: `admin`
+   - Password: `BertInference2024!`
+3. Navigate to **Dashboards > BERT Inference > BERT Inference Dashboard**
+
+### Available Metrics
+
+#### Inference Metrics
+| Metric | Description |
+|--------|-------------|
+| `inference_requests_total` | Total requests by status (success/error) |
+| `inference_request_duration_seconds` | Request latency histogram |
+| `inference_tokens_processed_total` | Total tokens processed |
+| `inference_batch_size` | Batch size distribution |
+| `inference_active_requests` | Currently processing requests |
+
+#### GPU Metrics (via DCGM)
+| Metric | Description |
+|--------|-------------|
+| `DCGM_FI_DEV_GPU_UTIL` | GPU utilization percentage |
+| `DCGM_FI_DEV_FB_USED` | GPU memory used (MB) |
+| `DCGM_FI_DEV_FB_FREE` | GPU memory free (MB) |
+| `DCGM_FI_DEV_GPU_TEMP` | GPU temperature (°C) |
+| `DCGM_FI_DEV_POWER_USAGE` | GPU power consumption (W) |
+
+### Dashboard Panels
+
+The pre-configured Grafana dashboard includes:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  BERT Inference Dashboard                                        │
+├─────────────────┬─────────────────┬─────────────────────────────┤
+│ Avg Latency     │ P95 Latency     │ Requests/sec │ Error Rate   │
+├─────────────────┴─────────────────┴─────────────────────────────┤
+│ Request Latency Distribution    │ Request Throughput            │
+├─────────────────────────────────┴───────────────────────────────┤
+│ GPU Utilization │ GPU Memory │ GPU Temp │ GPU Power             │
+├─────────────────┴────────────┴──────────┴───────────────────────┤
+│ Pod CPU Usage               │ Pod Memory Usage                  │
+├─────────────────────────────┴───────────────────────────────────┤
+│ HPA Replica Count           │ Pod Restarts                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Port-Forward Access
+
+For local access without LoadBalancer:
+
+```bash
+# Prometheus
+kubectl -n monitoring port-forward svc/prometheus 9090:9090
+
+# Grafana
+kubectl -n monitoring port-forward svc/grafana 3000:3000
+```
+
+### Custom Metrics Instrumentation
+
+The `app/inference_server.py` demonstrates how to instrument a FastAPI inference server with Prometheus metrics:
+
+```python
+from prometheus_client import Counter, Histogram, Gauge
+
+REQUEST_LATENCY = Histogram(
+    "inference_request_duration_seconds",
+    "Inference request latency",
+    ["model"],
+    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0]
+)
+
+# In your inference function:
+with REQUEST_LATENCY.labels(model="bert").time():
+    result = model.predict(inputs)
 ```
 
 ## Testing
