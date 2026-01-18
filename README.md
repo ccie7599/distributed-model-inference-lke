@@ -24,15 +24,21 @@ This project deploys a BERT model inference service using ONNX Runtime on Linode
 │   ├── outputs.tf      # Output values
 │   └── providers.tf    # Provider configuration
 │
-└── k8s/                # Kubernetes manifests
-    ├── nvidia-device-plugin.yaml  # NVIDIA GPU device plugin
-    ├── namespace.yaml  # Namespace definition
-    ├── configmap.yaml  # Model and runtime configuration
-    ├── pvc.yaml        # Persistent volume for model storage
-    ├── deployment.yaml # BERT inference deployment
-    ├── service.yaml    # Service definitions
-    ├── hpa.yaml        # Horizontal Pod Autoscaler
-    └── kustomization.yaml
+├── k8s/                # Kubernetes manifests
+│   ├── nvidia-device-plugin.yaml  # NVIDIA GPU device plugin
+│   ├── namespace.yaml  # Namespace definition
+│   ├── configmap.yaml  # Model and runtime configuration
+│   ├── pvc.yaml        # Persistent volume for model storage
+│   ├── deployment.yaml # BERT inference deployment
+│   ├── service.yaml    # Service definitions
+│   ├── hpa.yaml        # Horizontal Pod Autoscaler
+│   └── kustomization.yaml
+│
+└── tests/              # Test scripts
+    ├── smoke_test.sh   # Quick connectivity and health checks
+    ├── test_inference.py   # Functional inference tests
+    ├── load_test.py    # Load/stress testing
+    └── requirements.txt
 ```
 
 ## Deployment
@@ -122,6 +128,94 @@ The HPA automatically scales pods based on CPU/memory utilization. To manually s
 
 ```bash
 kubectl -n bert-inference scale deployment bert-inference --replicas=2
+```
+
+## Testing
+
+### Prerequisites
+
+```bash
+cd tests
+pip install -r requirements.txt
+```
+
+### Smoke Test
+
+Quick connectivity and health check (no Python dependencies required):
+
+```bash
+# Using kubectl port-forward (automatic)
+./smoke_test.sh
+
+# Or with direct endpoint
+./smoke_test.sh http://<EXTERNAL-IP>
+```
+
+**Test Scenarios:**
+1. Health endpoint check
+2. Model metadata retrieval
+3. Basic inference request
+4. GPU detection verification
+5. Pod status validation
+
+### Functional Tests
+
+Comprehensive inference testing with the Python test suite:
+
+```bash
+# Run all test scenarios
+python test_inference.py --endpoint http://<EXTERNAL-IP>
+
+# Save results to JSON
+python test_inference.py --endpoint http://<EXTERNAL-IP> --output results.json
+```
+
+**Test Scenarios:**
+1. **Health Check** - Verifies service is responding
+2. **Single Inference** - Tests individual text inference
+3. **Batch Inference** - Tests batched requests (4 samples)
+4. **Latency Test** - Measures latency over 10 sequential requests
+
+### Load Testing
+
+Stress test the service with concurrent requests:
+
+```bash
+# Default: 100 requests, 10 concurrent
+python load_test.py --endpoint http://<EXTERNAL-IP>
+
+# Custom load parameters
+python load_test.py \
+  --endpoint http://<EXTERNAL-IP> \
+  --requests 500 \
+  --concurrency 20 \
+  --output load_results.json
+```
+
+**Metrics Collected:**
+- Throughput (requests/second)
+- Latency percentiles (p50, p90, p95, p99)
+- Success/failure rates
+- Error categorization
+
+### Example Test Run
+
+```bash
+# 1. Deploy the service
+kubectl apply -k k8s/
+
+# 2. Wait for pods to be ready
+kubectl -n bert-inference wait --for=condition=ready pod -l app=bert-inference --timeout=300s
+
+# 3. Run smoke test
+cd tests
+./smoke_test.sh
+
+# 4. Run functional tests
+python test_inference.py --endpoint http://localhost:8080
+
+# 5. Run load test
+python load_test.py --endpoint http://localhost:8080 --requests 50 --concurrency 5
 ```
 
 ## Cleanup
