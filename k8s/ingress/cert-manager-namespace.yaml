@@ -1,0 +1,19 @@
+# Cert-Manager Installation
+#
+# Cert-manager is installed via the official manifest.
+# Run this command to install cert-manager before applying other resources:
+#
+#   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.yaml
+#
+# Wait for cert-manager to be ready:
+#
+#   kubectl -n cert-manager wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager --timeout=300s
+#
+# Then apply the ClusterIssuer and Ingress resources in this directory.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  labels:
+    app.kubernetes.io/name: cert-manager

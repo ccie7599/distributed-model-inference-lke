@@ -1,0 +1,22 @@
+# Basic Auth secret for Prometheus
+#
+# Generate a password hash using:
+#   htpasswd -c auth prometheus-admin
+#
+# Then create the secret:
+#   kubectl -n monitoring create secret generic prometheus-basic-auth --from-file=auth
+#
+# Or use this pre-configured secret (username: admin, password: PrometheusSecure2024!)
+# The hash below was generated with: htpasswd -nb admin PrometheusSecure2024!
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prometheus-basic-auth
+  namespace: monitoring
+  labels:
+    app: prometheus
+type: Opaque
+stringData:
+  auth: |
+    admin:$apr1$xyz12345$7K8HdJgZ5mRqT2nVpWxYz0

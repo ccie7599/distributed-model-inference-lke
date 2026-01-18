@@ -33,10 +33,15 @@ This project deploys a BERT model inference service using ONNX Runtime on Linode
 │   ├── service.yaml    # Service definitions
 │   ├── hpa.yaml        # Horizontal Pod Autoscaler
 │   ├── kustomization.yaml
-│   └── monitoring/     # Observability stack
-│       ├── prometheus-*.yaml   # Prometheus deployment
-│       ├── grafana-*.yaml      # Grafana with dashboards
-│       └── dcgm-exporter.yaml  # NVIDIA GPU metrics
+│   ├── monitoring/     # Observability stack
+│   │   ├── prometheus-*.yaml   # Prometheus deployment
+│   │   ├── grafana-*.yaml      # Grafana with dashboards
+│   │   └── dcgm-exporter.yaml  # NVIDIA GPU metrics
+│   └── ingress/        # TLS/Ingress configuration
+│       ├── nginx-ingress.yaml    # NGINX Ingress Controller
+│       ├── cluster-issuers.yaml  # Let's Encrypt issuers
+│       ├── ingress-tls.yaml      # Ingress with TLS
+│       └── configure-domains.sh  # Domain setup helper
 │
 ├── app/                # Inference server with metrics
 │   ├── inference_server.py  # FastAPI server with Prometheus instrumentation
@@ -234,6 +239,107 @@ REQUEST_LATENCY = Histogram(
 with REQUEST_LATENCY.labels(model="bert").time():
     result = model.predict(inputs)
 ```
+
+## TLS with Let's Encrypt
+
+The project includes NGINX Ingress Controller and cert-manager integration for automatic TLS certificate provisioning via Let's Encrypt.
+
+### Quick Setup
+
+```bash
+# 1. Configure your domain (replaces example.com with your domain)
+cd k8s/ingress
+./configure-domains.sh yourdomain.com your-email@yourdomain.com
+
+# 2. Install cert-manager
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.yaml
+
+# 3. Wait for cert-manager to be ready
+kubectl -n cert-manager wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager --timeout=300s
+
+# 4. Deploy ingress resources
+kubectl apply -k k8s/ingress/
+
+# 5. Get LoadBalancer IP
+kubectl -n ingress-nginx get svc ingress-nginx-controller
+```
+
+### DNS Configuration
+
+Point your DNS A records to the Ingress LoadBalancer IP:
+
+| Subdomain | Service |
+|-----------|---------|
+| `inference.yourdomain.com` | BERT Inference API |
+| `grafana.yourdomain.com` | Grafana Dashboard |
+| `prometheus.yourdomain.com` | Prometheus Metrics |
+
+### Verify Certificates
+
+```bash
+# Check certificate status
+kubectl get certificates -A
+
+# View certificate details
+kubectl -n bert-inference describe certificate bert-inference-tls
+
+# Test HTTPS endpoints
+curl https://inference.yourdomain.com/health
+curl https://grafana.yourdomain.com/api/health
+```
+
+### Architecture
+
+```
+                    ┌─────────────────────┐
+                    │   Let's Encrypt     │
+                    │   ACME Server       │
+                    └──────────┬──────────┘
+                               │ Certificate
+                               ▼ Issuance
+┌──────────────────────────────────────────────────────────┐
+│                    Kubernetes Cluster                     │
+│  ┌─────────────────┐    ┌─────────────────────────────┐  │
+│  │  cert-manager   │───▶│  TLS Secrets                │  │
+│  └─────────────────┘    │  (auto-renewed)             │  │
+│                         └──────────────┬──────────────┘  │
+│                                        │                 │
+│  ┌─────────────────────────────────────▼──────────────┐  │
+│  │           NGINX Ingress Controller                 │  │
+│  │           (LoadBalancer :443)                      │  │
+│  └──────┬─────────────┬────────────────┬──────────────┘  │
+│         │             │                │                 │
+│         ▼             ▼                ▼                 │
+│  ┌────────────┐ ┌──────────┐ ┌─────────────────────┐    │
+│  │ Inference  │ │ Grafana  │ │     Prometheus      │    │
+│  │  Service   │ │ :3000    │ │       :9090         │    │
+│  └────────────┘ └──────────┘ └─────────────────────┘    │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Ingress Annotations
+
+The ingress resources include useful annotations:
+
+```yaml
+annotations:
+  cert-manager.io/cluster-issuer: letsencrypt-prod  # Auto TLS
+  nginx.ingress.kubernetes.io/ssl-redirect: "true"  # Force HTTPS
+  nginx.ingress.kubernetes.io/proxy-body-size: "50m"  # Large payloads
+  nginx.ingress.kubernetes.io/proxy-read-timeout: "300"  # Long inference
+```
+
+### Staging vs Production
+
+For testing, use the staging issuer (avoids rate limits):
+
+```bash
+# Edit ingress-tls.yaml
+sed -i 's/letsencrypt-prod/letsencrypt-staging/g' k8s/ingress/ingress-tls.yaml
+kubectl apply -f k8s/ingress/ingress-tls.yaml
+```
+
+**Note:** Staging certificates are not trusted by browsers but are useful for testing the setup.
 
 ## Testing
 
