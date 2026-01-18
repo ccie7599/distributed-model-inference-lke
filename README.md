@@ -109,12 +109,19 @@ kubectl -n bert-inference get svc
 
 ### 5. Access the Service
 
+**Option A: Direct LoadBalancer (HTTP)**
 ```bash
 # Get external IP
 kubectl -n bert-inference get svc bert-inference-external
 
 # Test inference endpoint
 curl http://<EXTERNAL-IP>/v1/models/bert
+```
+
+**Option B: Via Ingress with TLS (HTTPS)** - See [TLS with Let's Encrypt](#tls-with-lets-encrypt)
+```bash
+# After configuring TLS ingress
+curl https://inference.yourdomain.com/v1/models/bert
 ```
 
 ## Configuration
@@ -163,7 +170,12 @@ kubectl -n monitoring get svc grafana-external
 
 ### Access Grafana
 
+**Option A: Direct LoadBalancer (HTTP)**
 1. Open `http://<GRAFANA-EXTERNAL-IP>` in your browser
+
+**Option B: Via Ingress with TLS (HTTPS)**
+1. Open `https://grafana.yourdomain.com` in your browser
+
 2. Login with:
    - Username: `admin`
    - Password: `BertInference2024!`
@@ -358,8 +370,11 @@ Quick connectivity and health check (no Python dependencies required):
 # Using kubectl port-forward (automatic)
 ./smoke_test.sh
 
-# Or with direct endpoint
+# With direct LoadBalancer IP (HTTP)
 ./smoke_test.sh http://<EXTERNAL-IP>
+
+# With TLS Ingress (HTTPS)
+./smoke_test.sh https://inference.yourdomain.com
 ```
 
 **Test Scenarios:**
@@ -374,11 +389,14 @@ Quick connectivity and health check (no Python dependencies required):
 Comprehensive inference testing with the Python test suite:
 
 ```bash
-# Run all test scenarios
+# Run all test scenarios (HTTP)
 python test_inference.py --endpoint http://<EXTERNAL-IP>
 
+# Run with TLS (HTTPS)
+python test_inference.py --endpoint https://inference.yourdomain.com
+
 # Save results to JSON
-python test_inference.py --endpoint http://<EXTERNAL-IP> --output results.json
+python test_inference.py --endpoint https://inference.yourdomain.com --output results.json
 ```
 
 **Test Scenarios:**
@@ -392,12 +410,15 @@ python test_inference.py --endpoint http://<EXTERNAL-IP> --output results.json
 Stress test the service with concurrent requests:
 
 ```bash
-# Default: 100 requests, 10 concurrent
+# Default: 100 requests, 10 concurrent (HTTP)
 python load_test.py --endpoint http://<EXTERNAL-IP>
+
+# With TLS (HTTPS)
+python load_test.py --endpoint https://inference.yourdomain.com
 
 # Custom load parameters
 python load_test.py \
-  --endpoint http://<EXTERNAL-IP> \
+  --endpoint https://inference.yourdomain.com \
   --requests 500 \
   --concurrency 20 \
   --output load_results.json
@@ -418,15 +439,19 @@ kubectl apply -k k8s/
 # 2. Wait for pods to be ready
 kubectl -n bert-inference wait --for=condition=ready pod -l app=bert-inference --timeout=300s
 
-# 3. Run smoke test
+# 3. Run smoke test (uses port-forward automatically)
 cd tests
 ./smoke_test.sh
 
-# 4. Run functional tests
+# 4. Run functional tests (via port-forward)
 python test_inference.py --endpoint http://localhost:8080
 
 # 5. Run load test
 python load_test.py --endpoint http://localhost:8080 --requests 50 --concurrency 5
+
+# 6. Or test via HTTPS (after TLS ingress is configured)
+python test_inference.py --endpoint https://inference.yourdomain.com
+python load_test.py --endpoint https://inference.yourdomain.com --requests 50 --concurrency 5
 ```
 
 ## Cleanup
