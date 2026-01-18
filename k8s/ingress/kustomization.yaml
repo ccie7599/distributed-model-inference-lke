@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# NOTE: Apply resources in order:
+# 1. First install cert-manager:
+#    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.yaml
+#
+# 2. Wait for cert-manager:
+#    kubectl -n cert-manager wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager --timeout=300s
+#
+# 3. Then apply these resources:
+#    kubectl apply -k k8s/ingress/
+
+resources:
+  - nginx-ingress.yaml
+  - cluster-issuers.yaml
+  - prometheus-auth.yaml
+  - ingress-tls.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: bert-inference-ingress
+  app.kubernetes.io/managed-by: kustomize

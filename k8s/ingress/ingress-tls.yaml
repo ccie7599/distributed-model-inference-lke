@@ -1,0 +1,106 @@
+# Ingress resources with TLS for external services
+#
+# IMPORTANT: Update the hostnames below with your actual domain names.
+# You need to point your DNS records to the Ingress LoadBalancer IP.
+#
+# Example DNS setup:
+#   inference.yourdomain.com  -> Ingress LoadBalancer IP
+#   grafana.yourdomain.com    -> Ingress LoadBalancer IP
+#   prometheus.yourdomain.com -> Ingress LoadBalancer IP
+
+---
+# BERT Inference Service Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bert-inference-ingress
+  namespace: bert-inference
+  labels:
+    app: bert-inference
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - inference.example.com  # Change to your domain
+      secretName: bert-inference-tls
+  rules:
+    - host: inference.example.com  # Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bert-inference
+                port:
+                  number: 80
+
+---
+# Grafana Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: monitoring
+  labels:
+    app: grafana
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - grafana.example.com  # Change to your domain
+      secretName: grafana-tls
+  rules:
+    - host: grafana.example.com  # Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000
+
+---
+# Prometheus Ingress (with basic auth recommended for production)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus-ingress
+  namespace: monitoring
+  labels:
+    app: prometheus
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # Uncomment below to enable basic auth (recommended for Prometheus)
+    # nginx.ingress.kubernetes.io/auth-type: basic
+    # nginx.ingress.kubernetes.io/auth-secret: prometheus-basic-auth
+    # nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - prometheus.example.com  # Change to your domain
+      secretName: prometheus-tls
+  rules:
+    - host: prometheus.example.com  # Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: 9090
