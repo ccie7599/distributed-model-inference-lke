@@ -25,6 +25,7 @@ This project deploys a BERT model inference service using ONNX Runtime on Linode
 │   └── providers.tf    # Provider configuration
 │
 └── k8s/                # Kubernetes manifests
+    ├── nvidia-device-plugin.yaml  # NVIDIA GPU device plugin
     ├── namespace.yaml  # Namespace definition
     ├── configmap.yaml  # Model and runtime configuration
     ├── pvc.yaml        # Persistent volume for model storage
@@ -58,11 +59,26 @@ export KUBECONFIG=$(pwd)/kubeconfig.yaml
 kubectl get nodes
 ```
 
-### 3. Deploy BERT Inference Service
+### 3. Install NVIDIA Device Plugin
+
+The NVIDIA device plugin is required to expose GPU resources to Kubernetes:
 
 ```bash
 cd ../k8s
 
+# Deploy NVIDIA device plugin
+kubectl apply -f nvidia-device-plugin.yaml
+
+# Verify plugin is running on GPU nodes
+kubectl -n kube-system get pods -l app=nvidia-device-plugin
+
+# Confirm GPUs are detected (should show nvidia.com/gpu capacity)
+kubectl get nodes -o json | jq '.items[].status.capacity'
+```
+
+### 4. Deploy BERT Inference Service
+
+```bash
 # Deploy all resources
 kubectl apply -k .
 
@@ -71,7 +87,7 @@ kubectl -n bert-inference get pods
 kubectl -n bert-inference get svc
 ```
 
-### 4. Access the Service
+### 5. Access the Service
 
 ```bash
 # Get external IP
