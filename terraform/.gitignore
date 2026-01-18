@@ -1,0 +1,26 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Terraform lock file (optional, some teams commit this)
+.terraform.lock.hcl
+
+# Terraform working directory
+.terraform/
+
+# Sensitive variable files
+terraform.tfvars
+*.auto.tfvars
+
+# Generated kubeconfig
+kubeconfig.yaml
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

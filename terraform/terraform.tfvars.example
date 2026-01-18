@@ -1,0 +1,17 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+# Required: Your Linode API token
+linode_token = "your-linode-api-token-here"
+
+# Optional: Customize cluster settings
+# cluster_label  = "bert-inference-cluster"
+# region         = "us-ord"
+# k8s_version    = "1.31"
+
+# GPU node configuration
+# gpu_node_type  = "g1-gpu-rtx6000-1"
+# gpu_node_count = 1
+
+# CPU node configuration (for system workloads)
+# cpu_node_type  = "g6-standard-2"
+# cpu_node_count = 2
