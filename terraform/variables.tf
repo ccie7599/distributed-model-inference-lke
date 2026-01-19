@@ -19,13 +19,13 @@ variable "region" {
 variable "k8s_version" {
   description = "Kubernetes version for LKE"
   type        = string
-  default     = "1.31"
+  default     = "1.33"
 }
 
 variable "gpu_node_type" {
   description = "Linode GPU instance type for inference nodes"
   type        = string
-  default     = "g1-gpu-rtx6000-1"
+  default     = "g2-gpu-rtx4000a1-s"
 }
 
 variable "gpu_node_count" {

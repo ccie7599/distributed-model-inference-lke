@@ -28,7 +28,6 @@ This project deploys a BERT model inference service using ONNX Runtime on Linode
 │   ├── nvidia-device-plugin.yaml  # NVIDIA GPU device plugin
 │   ├── namespace.yaml  # Namespace definition
 │   ├── configmap.yaml  # Model and runtime configuration
-│   ├── pvc.yaml        # Persistent volume for model storage
 │   ├── deployment.yaml # BERT inference deployment
 │   ├── service.yaml    # Service definitions
 │   ├── hpa.yaml        # Horizontal Pod Autoscaler
@@ -94,6 +93,13 @@ kubectl -n kube-system get pods -l app=nvidia-device-plugin
 
 # Confirm GPUs are detected (should show nvidia.com/gpu capacity)
 kubectl get nodes -o json | jq '.items[].status.capacity'
+
+# IMPORTANT: Label GPU nodes for scheduling
+# Find your GPU node name
+kubectl get nodes
+
+# Label the GPU node (required for workload scheduling)
+kubectl label node <GPU_NODE_NAME> nvidia.com/gpu.present=true
 ```
 
 ### 4. Deploy BERT Inference Service
@@ -133,7 +139,8 @@ curl https://inference.yourdomain.com/v1/models/bert
 | `linode_token` | Linode API token | (required) |
 | `cluster_label` | Cluster name | `bert-inference-cluster` |
 | `region` | Linode region | `us-ord` |
-| `gpu_node_type` | GPU instance type | `g1-gpu-rtx6000-1` |
+| `k8s_version` | Kubernetes version | `1.33` |
+| `gpu_node_type` | GPU instance type | `g2-gpu-rtx4000a1-s` |
 | `gpu_node_count` | Number of GPU nodes | `1` |
 
 ### Model Configuration
@@ -452,6 +459,56 @@ python load_test.py --endpoint http://localhost:8080 --requests 50 --concurrency
 # 6. Or test via HTTPS (after TLS ingress is configured)
 python test_inference.py --endpoint https://inference.yourdomain.com
 python load_test.py --endpoint https://inference.yourdomain.com --requests 50 --concurrency 5
+```
+
+## Building a Custom Docker Image
+
+The default deployment uses a pre-built image with the BERT model baked in. To build your own:
+
+```bash
+cd app
+
+# Build the image (includes downloading and exporting BERT to ONNX)
+docker build -t yourusername/bert-inference:gpu-v1 .
+
+# Push to Docker Hub
+docker push yourusername/bert-inference:gpu-v1
+
+# Update the deployment to use your image
+# Edit k8s/deployment.yaml and change the image field
+```
+
+The Dockerfile:
+- Uses NVIDIA CUDA 12.2 base image
+- Downloads bert-base-uncased model from HuggingFace
+- Exports the model to ONNX format using the `optimum` library
+- Includes the FastAPI inference server with Prometheus metrics
+
+**Note:** The resulting image is ~10GB due to CUDA, PyTorch, and model weights.
+
+## Quick Test
+
+Test the inference endpoint with curl:
+
+```bash
+# Get the external IP
+INFERENCE_IP=$(kubectl -n bert-inference get svc bert-inference-external -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+# Health check
+curl http://${INFERENCE_IP}/health
+
+# Run inference
+curl -X POST http://${INFERENCE_IP}/v1/models/bert:predict \
+  -H "Content-Type: application/json" \
+  -d '{"texts": ["Hello world, this is a test of BERT inference on GPU!"]}'
+
+# Generate load for Grafana visualization
+for i in {1..100}; do
+  curl -s -X POST http://${INFERENCE_IP}/v1/models/bert:predict \
+    -H "Content-Type: application/json" \
+    -d '{"texts": ["Test inference request number '$i'"]}' > /dev/null
+  echo "Request $i sent"
+done
 ```
 
 ## Cleanup
