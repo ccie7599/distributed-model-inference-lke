@@ -27,6 +27,11 @@ from transformers import BertTokenizer
 
 # Configuration from environment
 MODEL_PATH = os.getenv("MODEL_PATH", "/models/bert-base-uncased/model.onnx")
+# Also check for optimum-exported model path
+if not os.path.exists(MODEL_PATH):
+    alt_path = "/models/bert-base-uncased/model.onnx"
+    if os.path.exists(alt_path):
+        MODEL_PATH = alt_path
 MAX_SEQUENCE_LENGTH = int(os.getenv("MAX_SEQUENCE_LENGTH", "512"))
 EXECUTION_PROVIDER = os.getenv("ONNX_EXECUTION_PROVIDER", "CUDAExecutionProvider")
 

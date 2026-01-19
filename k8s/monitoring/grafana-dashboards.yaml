@@ -230,7 +230,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "sum(DCGM_FI_DEV_COUNT) or vector(0)",
+              "expr": "count(count by (UUID) (DCGM_FI_DEV_GPU_TEMP)) or vector(0)",
               "refId": "A"
             }
           ]

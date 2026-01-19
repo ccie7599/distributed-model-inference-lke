@@ -6,7 +6,6 @@ namespace: bert-inference
 resources:
   - namespace.yaml
   - configmap.yaml
-  - pvc.yaml
   - deployment.yaml
   - service.yaml
   - hpa.yaml
