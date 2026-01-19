@@ -19,9 +19,9 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/path: "/metrics"
     spec:
-      # Schedule on GPU nodes
+      # Schedule on GPU nodes (label GPU nodes with: kubectl label node <node-name> nvidia.com/gpu.present=true)
       nodeSelector:
-        lke.linode.com/pool-id: gpu
+        nvidia.com/gpu.present: "true"
 
       # Ensure pods don't get scheduled on nodes without GPUs
       tolerations:
@@ -31,41 +31,38 @@ spec:
 
       containers:
         - name: bert-inference
-          # Using Microsoft's ONNX Runtime GPU image as base
-          image: mcr.microsoft.com/onnxruntime/server:latest
+          # Custom GPU image with BERT model baked in
+          image: brianapley/bert-inference:gpu-v1
           imagePullPolicy: Always
 
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
-            - name: grpc
-              containerPort: 50051
-              protocol: TCP
 
-          envFrom:
-            - configMapRef:
-                name: bert-inference-config
+          env:
+            - name: MODEL_PATH
+              value: "/models/bert-base-uncased/model.onnx"
+            - name: ONNX_EXECUTION_PROVIDER
+              value: "CUDAExecutionProvider"
+            - name: MAX_SEQUENCE_LENGTH
+              value: "512"
 
           resources:
             requests:
-              memory: "4Gi"
+              memory: "8Gi"
               cpu: "2"
               nvidia.com/gpu: "1"
             limits:
-              memory: "8Gi"
+              memory: "12Gi"
               cpu: "4"
               nvidia.com/gpu: "1"
-
-          volumeMounts:
-            - name: model-storage
-              mountPath: /models
 
           livenessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 120
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
@@ -74,15 +71,10 @@ spec:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 20
+            initialDelaySeconds: 90
             periodSeconds: 5
             timeoutSeconds: 3
-            failureThreshold: 3
-
-      volumes:
-        - name: model-storage
-          persistentVolumeClaim:
-            claimName: bert-model-storage
+            failureThreshold: 5
 
       # Graceful shutdown
       terminationGracePeriodSeconds: 30
