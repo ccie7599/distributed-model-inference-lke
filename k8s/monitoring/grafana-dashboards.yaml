@@ -196,7 +196,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "count(up{job=\"kubernetes-pods\", namespace=\"bert-inference\"} == 1) or vector(0)",
+              "expr": "count(up{job=\"bert-inference\"} == 1) or vector(0)",
               "refId": "A"
             }
           ]
