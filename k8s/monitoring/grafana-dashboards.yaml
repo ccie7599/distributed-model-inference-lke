@@ -196,7 +196,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "count(kube_pod_status_phase{namespace=\"bert-inference\",phase=\"Running\"})",
+              "expr": "count(up{job=\"kubernetes-pods\", namespace=\"bert-inference\"} == 1) or vector(0)",
               "refId": "A"
             }
           ]
