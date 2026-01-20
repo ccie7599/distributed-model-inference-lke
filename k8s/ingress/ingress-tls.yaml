@@ -1,19 +1,15 @@
 # Ingress resources with TLS for external services
 #
-# IMPORTANT: Update the hostnames below with your actual domain names.
-# You need to point your DNS records to the Ingress LoadBalancer IP.
-#
-# Example DNS setup:
-#   inference.yourdomain.com  -> Ingress LoadBalancer IP
-#   grafana.yourdomain.com    -> Ingress LoadBalancer IP
-#   prometheus.yourdomain.com -> Ingress LoadBalancer IP
+# DNS setup required:
+#   ei.connected-cloud.io      -> Ingress LoadBalancer IP
+#   grafana.connected-cloud.io -> Ingress LoadBalancer IP
 
 ---
-# BERT Inference Service Ingress
+# Combined Ingress for Demo UI and BERT Inference API
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: bert-inference-ingress
+  name: bert-demo-ingress
   namespace: bert-inference
   labels:
     app: bert-inference
@@ -23,21 +19,45 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - inference.example.com  # Change to your domain
+        - ei.connected-cloud.io
       secretName: bert-inference-tls
   rules:
-    - host: inference.example.com  # Change to your domain
+    - host: ei.connected-cloud.io
       http:
         paths:
-          - path: /
+          # API routes - direct to inference service
+          - path: /v1
             pathType: Prefix
             backend:
               service:
                 name: bert-inference
+                port:
+                  number: 80
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: bert-inference
+                port:
+                  number: 80
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: bert-inference
+                port:
+                  number: 80
+          # Demo UI - catch all other routes
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-ui
                 port:
                   number: 80
 
@@ -57,10 +77,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - grafana.example.com  # Change to your domain
+        - grafana.connected-cloud.io
       secretName: grafana-tls
   rules:
-    - host: grafana.example.com  # Change to your domain
+    - host: grafana.connected-cloud.io
       http:
         paths:
           - path: /
@@ -70,37 +90,3 @@ spec:
                 name: grafana
                 port:
                   number: 3000
-
----
-# Prometheus Ingress (with basic auth recommended for production)
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: prometheus-ingress
-  namespace: monitoring
-  labels:
-    app: prometheus
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    # Uncomment below to enable basic auth (recommended for Prometheus)
-    # nginx.ingress.kubernetes.io/auth-type: basic
-    # nginx.ingress.kubernetes.io/auth-secret: prometheus-basic-auth
-    # nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
-spec:
-  ingressClassName: nginx
-  tls:
-    - hosts:
-        - prometheus.example.com  # Change to your domain
-      secretName: prometheus-tls
-  rules:
-    - host: prometheus.example.com  # Change to your domain
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: prometheus
-                port:
-                  number: 9090

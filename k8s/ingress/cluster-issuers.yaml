@@ -11,7 +11,7 @@ spec:
   acme:
     # Staging server for testing
     server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: admin@example.com  # Change this to your email
+    email: bapley@akamai.com
     privateKeySecretRef:
       name: letsencrypt-staging-account-key
     solvers:
@@ -28,7 +28,7 @@ spec:
   acme:
     # Production server for real certificates
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@example.com  # Change this to your email
+    email: bapley@akamai.com
     privateKeySecretRef:
       name: letsencrypt-prod-account-key
     solvers:

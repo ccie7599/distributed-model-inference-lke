@@ -14,6 +14,7 @@ from typing import Optional
 import numpy as np
 import onnxruntime as ort
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
@@ -93,6 +94,7 @@ class InferenceRequest(BaseModel):
     text: Optional[str] = None
     texts: Optional[list[str]] = None
     inputs: Optional[dict] = None  # Pre-tokenized inputs
+    include_embeddings: bool = False  # Set True to return full 512x768 embeddings (~8MB)
 
 
 class InferenceResponse(BaseModel):
@@ -251,6 +253,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# CORS middleware for demo page
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health")
 async def health():
@@ -305,7 +316,7 @@ async def predict(request: InferenceRequest):
     result = engine.infer(inputs)
 
     return InferenceResponse(
-        embeddings=result.get("last_hidden_state"),
+        embeddings=result.get("last_hidden_state") if request.include_embeddings else None,
         pooler_output=result.get("pooler_output"),
         latency_ms=result["latency_ms"],
         batch_size=result["batch_size"],
