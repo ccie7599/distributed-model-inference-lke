@@ -47,6 +47,9 @@ This project deploys a BERT model inference service using ONNX Runtime on Linode
 │   ├── Dockerfile
 │   └── requirements.txt
 │
+├── demo/               # Interactive demo UI
+│   └── index.html      # Self-contained demo page (open in browser)
+│
 └── tests/              # Test scripts
     ├── smoke_test.sh   # Quick connectivity and health checks
     ├── test_inference.py   # Functional inference tests
@@ -485,6 +488,66 @@ The Dockerfile:
 - Includes the FastAPI inference server with Prometheus metrics
 
 **Note:** The resulting image is ~10GB due to CUDA, PyTorch, and model weights.
+
+## Interactive Demo
+
+An interactive web-based demo is included for testing and visualizing inference performance.
+
+### Running the Demo
+
+1. **Open the demo page** - Simply open `demo/index.html` in your browser (works locally, no server needed)
+
+2. **Configure the endpoint**:
+   - For local testing via port-forward:
+     ```bash
+     kubectl -n bert-inference port-forward svc/bert-inference 8080:8080
+     ```
+     Then use `http://localhost:8080` as the endpoint
+
+   - For LoadBalancer access:
+     ```bash
+     INFERENCE_IP=$(kubectl -n bert-inference get svc bert-inference-external -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+     ```
+     Use `http://${INFERENCE_IP}` as the endpoint
+
+   - For HTTPS with TLS Ingress:
+     Use `https://inference.yourdomain.com`
+
+3. **Test the connection** - Click "Test Connection" to verify connectivity
+
+4. **Send queries**:
+   - Click "Send Query" to send individual test queries
+   - Enable "Auto-generate queries" for continuous load generation
+   - Click sample query chips to test specific inputs
+
+### Demo Features
+
+- **Dark theme** responsive UI
+- **Real-time latency display**:
+  - HTTP round-trip time (client-measured)
+  - Server-side processing time (from API response)
+- **Rolling 60-second latency chart** with both metrics plotted
+- **Query log** showing recent requests with status and latencies
+- **Statistics panel**: average latencies, success/error counts, requests/sec
+
+### Screenshot
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  BERT Inference Demo                                             │
+│  Distributed Model Inference on LKE with GPU Acceleration        │
+├─────────────────────────────────────────────────────────────────┤
+│  Endpoint: [http://localhost:8080    ] [Test Connection] [●]    │
+│  [✓] Auto-generate queries    [Send Query]  [Clear Stats]       │
+├──────────┬──────────┬──────────┬──────────┬──────────────────────┤
+│ 45.2 ms  │ 12.3 ms  │   156    │    2     │      8.5            │
+│ HTTP Lat │ Srv Lat  │ Success  │ Errors   │     RPS             │
+├──────────┴──────────┴──────────┴──────────┴──────────────────────┤
+│  Latency Chart (60s)         │  Query Log                       │
+│  ▁▂▃▄▅▆▇█▇▆▅▄▃▂▁            │  [●] "Quick brown..." 45ms 12ms  │
+│  — HTTP  — Server            │  [●] "ML models..."   43ms 11ms  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ## Quick Test
 

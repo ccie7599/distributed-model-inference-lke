@@ -37,3 +37,4 @@ load_results.json
 
 # Jupyter
 .ipynb_checkpoints/
+terraform/tfplan

@@ -32,7 +32,7 @@ spec:
       containers:
         - name: bert-inference
           # Custom GPU image with BERT model baked in
-          image: brianapley/bert-inference:gpu-v1
+          image: brianapley/bert-inference:gpu-v2
           imagePullPolicy: Always
 
           ports:

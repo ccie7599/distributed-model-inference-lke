@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-ui
+  namespace: bert-inference
+  labels:
+    app: demo-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-ui
+  template:
+    metadata:
+      labels:
+        app: demo-ui
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      volumes:
+        - name: html
+          configMap:
+            name: demo-html
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-ui
+  namespace: bert-inference
+  labels:
+    app: demo-ui
+spec:
+  selector:
+    app: demo-ui
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BERT Inference Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-purple: #a371f7;
+            --accent-orange: #d29922;
+            --accent-red: #f85149;
+            --gradient-start: #58a6ff;
+            --gradient-end: #a371f7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .config-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .config-row {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value.http { color: var(--accent-blue); }
+        .stat-value.server { color: var(--accent-purple); }
+        .stat-value.success { color: var(--accent-green); }
+        .stat-value.error { color: var(--accent-red); }
+        .stat-value.rps { color: var(--accent-orange); }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-body {
+            padding: 1.25rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .query-log {
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+        }
+
+        .log-entry {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        .log-text {
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .log-latency {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .latency-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .latency-badge.http {
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .latency-badge.server {
+            background: rgba(163, 113, 247, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+        }
+
+        .status-indicator.error {
+            background: var(--accent-red);
+        }
+
+        .sample-queries {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .sample-query {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sample-query:hover {
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .connection-status.connected {
+            background: rgba(63, 185, 80, 0.15);
+            color: var(--accent-green);
+        }
+
+        .connection-status.disconnected {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--accent-red);
+        }
+
+        .connection-status.testing {
+            background: rgba(210, 153, 34, 0.15);
+            color: var(--accent-orange);
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .auto-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-blue);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-color.http { background: var(--accent-blue); }
+        .legend-color.server { background: var(--accent-purple); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>BERT Inference Demo</h1>
+            <p class="subtitle">Distributed Model Inference on LKE with GPU Acceleration</p>
+        </header>
+
+        <div class="config-panel">
+            <div class="config-row">
+                <div class="input-group">
+                    <label for="endpoint">Inference Endpoint</label>
+                    <input type="text" id="endpoint" placeholder="http://localhost:8080" value="http://localhost:8080">
+                </div>
+                <div class="input-group" style="max-width: 150px;">
+                    <label for="interval">Auto Interval (ms)</label>
+                    <input type="number" id="interval" value="1000" min="100" max="10000" step="100">
+                </div>
+                <div class="controls">
+                    <button class="btn btn-secondary" id="testConnection">
+                        <span id="testIcon">&#9679;</span> Test Connection
+                    </button>
+                    <span class="connection-status disconnected" id="connectionStatus">
+                        <span class="status-indicator"></span>
+                        Disconnected
+                    </span>
+                </div>
+            </div>
+            <div class="auto-controls">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="autoQuery">
+                    <label for="autoQuery" style="margin: 0;">Auto-generate queries</label>
+                </div>
+                <button class="btn btn-primary" id="sendQuery">
+                    Send Query
+                </button>
+                <button class="btn btn-secondary" id="clearStats">
+                    Clear Stats
+                </button>
+            </div>
+            <div class="sample-queries">
+                <span style="color: var(--text-secondary); font-size: 0.8rem; margin-right: 0.5rem;">Try:</span>
+                <span class="sample-query" data-text="The quick brown fox jumps over the lazy dog.">Quick brown fox</span>
+                <span class="sample-query" data-text="Machine learning models can process natural language with remarkable accuracy.">ML models</span>
+                <span class="sample-query" data-text="Kubernetes orchestrates containerized applications at scale across distributed infrastructure.">Kubernetes</span>
+                <span class="sample-query" data-text="GPU acceleration significantly improves deep learning inference performance.">GPU inference</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value http" id="avgHttpLatency">--</div>
+                <div class="stat-label">Avg HTTP Latency</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value server" id="avgServerLatency">--</div>
+                <div class="stat-label">Avg Server Latency</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value success" id="successCount">0</div>
+                <div class="stat-label">Successful</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value error" id="errorCount">0</div>
+                <div class="stat-label">Errors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value rps" id="rps">0.0</div>
+                <div class="stat-label">Requests/sec</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        <span style="color: var(--accent-blue);">&#9632;</span>
+                        Latency Over Time (Last 60s)
+                    </span>
+                </div>
+                <div class="panel-body">
+                    <div class="chart-container">
+                        <canvas id="latencyChart"></canvas>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color http"></div>
+                            <span>HTTP Round-Trip</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color server"></div>
+                            <span>Server Processing</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        <span style="color: var(--accent-green);">&#9632;</span>
+                        Query Log
+                    </span>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem;" id="logCount">0 queries</span>
+                </div>
+                <div class="panel-body" style="padding: 0;">
+                    <div class="query-log" id="queryLog">
+                        <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                            No queries yet. Click "Send Query" or enable auto-generate.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let isConnected = false;
+        let autoQueryInterval = null;
+        let queryHistory = [];
+        let latencyData = { http: [], server: [], labels: [] };
+        const MAX_DATA_POINTS = 60;
+
+        // Sample texts for auto-generation
+        const sampleTexts = [
+            "The quick brown fox jumps over the lazy dog.",
+            "Machine learning models can process natural language with remarkable accuracy.",
+            "Kubernetes orchestrates containerized applications at scale across distributed infrastructure.",
+            "GPU acceleration significantly improves deep learning inference performance.",
+            "BERT is a transformer-based model designed for natural language understanding tasks.",
+            "Distributed systems require careful consideration of network latency and fault tolerance.",
+            "Neural networks learn representations of data through multiple layers of abstraction.",
+            "Cloud-native applications leverage microservices architecture for scalability.",
+            "Inference optimization techniques include quantization, pruning, and knowledge distillation.",
+            "Real-time systems must balance throughput with latency requirements.",
+            "Containerization provides consistent runtime environments across development and production.",
+            "Load balancing distributes traffic across multiple backend servers for high availability.",
+            "Prometheus collects and stores metrics as time series data with key-value labels.",
+            "Horizontal pod autoscaling adjusts replica count based on observed CPU or memory utilization.",
+            "TLS encryption secures data in transit between clients and servers."
+        ];
+
+        // Chart setup
+        const ctx = document.getElementById('latencyChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'HTTP Latency',
+                        data: [],
+                        borderColor: '#58a6ff',
+                        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 2,
+                        pointHoverRadius: 4
+                    },
+                    {
+                        label: 'Server Latency',
+                        data: [],
+                        borderColor: '#a371f7',
+                        backgroundColor: 'rgba(163, 113, 247, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 2,
+                        pointHoverRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#21262d',
+                        titleColor: '#e6edf3',
+                        bodyColor: '#8b949e',
+                        borderColor: '#30363d',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw.toFixed(2) + ' ms';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        grid: {
+                            color: 'rgba(48, 54, 61, 0.5)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#8b949e',
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        display: true,
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(48, 54, 61, 0.5)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#8b949e',
+                            callback: function(value) {
+                                return value + ' ms';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // DOM elements
+        const endpointInput = document.getElementById('endpoint');
+        const intervalInput = document.getElementById('interval');
+        const testConnectionBtn = document.getElementById('testConnection');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const autoQueryCheckbox = document.getElementById('autoQuery');
+        const sendQueryBtn = document.getElementById('sendQuery');
+        const clearStatsBtn = document.getElementById('clearStats');
+        const queryLog = document.getElementById('queryLog');
+
+        // Functions
+        function getEndpoint() {
+            return endpointInput.value.replace(/\/$/, '');
+        }
+
+        function updateConnectionStatus(status, message) {
+            connectionStatus.className = `connection-status ${status}`;
+            const indicator = connectionStatus.querySelector('.status-indicator');
+            indicator.className = `status-indicator ${status === 'connected' ? '' : status === 'testing' ? 'pulse' : 'error'}`;
+            connectionStatus.innerHTML = `<span class="status-indicator ${status === 'error' ? 'error' : ''}"></span> ${message}`;
+            isConnected = status === 'connected';
+        }
+
+        async function testConnection() {
+            const endpoint = getEndpoint();
+            updateConnectionStatus('testing', 'Testing...');
+
+            try {
+                const response = await fetch(`${endpoint}/health`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'healthy') {
+                        updateConnectionStatus('connected', 'Connected');
+                    } else {
+                        updateConnectionStatus('disconnected', 'Unhealthy');
+                    }
+                } else {
+                    updateConnectionStatus('disconnected', `Error: ${response.status}`);
+                }
+            } catch (error) {
+                updateConnectionStatus('disconnected', 'Connection Failed');
+                console.error('Connection test failed:', error);
+            }
+        }
+
+        function getRandomText() {
+            return sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+        }
+
+        function formatTime(date) {
+            return date.toLocaleTimeString('en-US', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function addToChart(httpLatency, serverLatency) {
+            const now = new Date();
+            const label = formatTime(now);
+
+            latencyData.labels.push(label);
+            latencyData.http.push(httpLatency);
+            latencyData.server.push(serverLatency);
+
+            // Keep only last 60 data points
+            if (latencyData.labels.length > MAX_DATA_POINTS) {
+                latencyData.labels.shift();
+                latencyData.http.shift();
+                latencyData.server.shift();
+            }
+
+            chart.data.labels = latencyData.labels;
+            chart.data.datasets[0].data = latencyData.http;
+            chart.data.datasets[1].data = latencyData.server;
+            chart.update('none');
+        }
+
+        function addToLog(text, httpLatency, serverLatency, success) {
+            const entry = {
+                time: new Date(),
+                text: text,
+                httpLatency: httpLatency,
+                serverLatency: serverLatency,
+                success: success
+            };
+
+            queryHistory.unshift(entry);
+            if (queryHistory.length > 100) queryHistory.pop();
+
+            renderLog();
+            updateStats();
+        }
+
+        function renderLog() {
+            if (queryHistory.length === 0) {
+                queryLog.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                    No queries yet. Click "Send Query" or enable auto-generate.
+                </div>`;
+                return;
+            }
+
+            queryLog.innerHTML = queryHistory.slice(0, 50).map(entry => `
+                <div class="log-entry">
+                    <div class="status-indicator ${entry.success ? '' : 'error'}"></div>
+                    <div class="log-text" title="${entry.text}">${entry.text}</div>
+                    <div class="log-latency">
+                        <span class="latency-badge http">${entry.httpLatency.toFixed(1)} ms</span>
+                        <span class="latency-badge server">${entry.serverLatency.toFixed(1)} ms</span>
+                    </div>
+                    <div class="log-time">${formatTime(entry.time)}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('logCount').textContent = `${queryHistory.length} queries`;
+        }
+
+        function updateStats() {
+            const successful = queryHistory.filter(q => q.success);
+            const errors = queryHistory.filter(q => !q.success);
+
+            document.getElementById('successCount').textContent = successful.length;
+            document.getElementById('errorCount').textContent = errors.length;
+
+            if (successful.length > 0) {
+                const avgHttp = successful.reduce((sum, q) => sum + q.httpLatency, 0) / successful.length;
+                const avgServer = successful.reduce((sum, q) => sum + q.serverLatency, 0) / successful.length;
+
+                document.getElementById('avgHttpLatency').textContent = avgHttp.toFixed(1) + ' ms';
+                document.getElementById('avgServerLatency').textContent = avgServer.toFixed(1) + ' ms';
+            }
+
+            // Calculate RPS over last 10 seconds
+            const tenSecondsAgo = Date.now() - 10000;
+            const recentQueries = queryHistory.filter(q => q.time.getTime() > tenSecondsAgo);
+            const rps = recentQueries.length / 10;
+            document.getElementById('rps').textContent = rps.toFixed(1);
+        }
+
+        async function sendQuery(text = null) {
+            const endpoint = getEndpoint();
+            const queryText = text || getRandomText();
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(`${endpoint}/v1/models/bert:predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ texts: [queryText] })
+                });
+
+                const endTime = performance.now();
+                const httpLatency = endTime - startTime;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const serverLatency = data.latency_ms || 0;
+
+                    addToChart(httpLatency, serverLatency);
+                    addToLog(queryText, httpLatency, serverLatency, true);
+
+                    if (!isConnected) {
+                        updateConnectionStatus('connected', 'Connected');
+                    }
+                } else {
+                    addToLog(queryText, httpLatency, 0, false);
+                    updateConnectionStatus('disconnected', `Error: ${response.status}`);
+                }
+            } catch (error) {
+                const endTime = performance.now();
+                addToLog(queryText, endTime - startTime, 0, false);
+                updateConnectionStatus('disconnected', 'Connection Failed');
+                console.error('Query failed:', error);
+            }
+        }
+
+        function toggleAutoQuery() {
+            if (autoQueryCheckbox.checked) {
+                const interval = parseInt(intervalInput.value) || 1000;
+                autoQueryInterval = setInterval(() => sendQuery(), interval);
+            } else {
+                if (autoQueryInterval) {
+                    clearInterval(autoQueryInterval);
+                    autoQueryInterval = null;
+                }
+            }
+        }
+
+        function clearStats() {
+            queryHistory = [];
+            latencyData = { http: [], server: [], labels: [] };
+
+            chart.data.labels = [];
+            chart.data.datasets[0].data = [];
+            chart.data.datasets[1].data = [];
+            chart.update();
+
+            document.getElementById('avgHttpLatency').textContent = '--';
+            document.getElementById('avgServerLatency').textContent = '--';
+            document.getElementById('successCount').textContent = '0';
+            document.getElementById('errorCount').textContent = '0';
+            document.getElementById('rps').textContent = '0.0';
+
+            renderLog();
+        }
+
+        // Event listeners
+        testConnectionBtn.addEventListener('click', testConnection);
+        sendQueryBtn.addEventListener('click', () => sendQuery());
+        clearStatsBtn.addEventListener('click', clearStats);
+        autoQueryCheckbox.addEventListener('change', toggleAutoQuery);
+
+        intervalInput.addEventListener('change', () => {
+            if (autoQueryCheckbox.checked) {
+                toggleAutoQuery(); // Stop
+                autoQueryCheckbox.checked = true;
+                toggleAutoQuery(); // Restart with new interval
+            }
+        });
+
+        // Sample query clicks
+        document.querySelectorAll('.sample-query').forEach(el => {
+            el.addEventListener('click', () => {
+                sendQuery(el.dataset.text);
+            });
+        });
+
+        // Test connection on load if endpoint is set
+        if (endpointInput.value) {
+            setTimeout(testConnection, 500);
+        }
+    </script>
+</body>
+</html>
