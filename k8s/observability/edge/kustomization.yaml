@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference the federated observability framework
+# Update the ref to match your desired version
+resources:
+  - github.com/YOUR_ORG/federated-k8s-observability//base/edge?ref=main
+
+# Customize for this cluster
+patches:
+  - target:
+      kind: ConfigMap
+      name: edge-config
+    patch: |-
+      - op: replace
+        path: /data/CLUSTER_NAME
+        value: "bert-inference-lke"
+      - op: replace
+        path: /data/CLUSTER_REGION
+        value: "us-ord"
+      - op: replace
+        path: /data/CLUSTER_ENVIRONMENT
+        value: "production"
+      - op: replace
+        path: /data/HUB_ENDPOINT
+        value: "YOUR_HUB_IP:4317"

@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference the federated observability framework
+# Update the ref to match your desired version
+resources:
+  - github.com/YOUR_ORG/federated-k8s-observability//base/hub?ref=main
+
+# Uncomment to enable Datadog integration
+# components:
+#   - github.com/YOUR_ORG/federated-k8s-observability//components/datadog?ref=main
+
+# Customize for your environment
+patches:
+  # Example: Set Grafana password
+  - target:
+      kind: Secret
+      name: grafana-credentials
+    patch: |-
+      - op: replace
+        path: /stringData/admin-password
+        value: "your-secure-password"
