@@ -1,0 +1,155 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# This component adds Datadog export capability to the OTel Gateway
+# Include in your hub overlay to enable forwarding to Datadog
+
+resources:
+  - secret.yaml
+
+patches:
+  # Patch the OTel Gateway config to add Datadog exporter
+  - target:
+      kind: ConfigMap
+      name: otel-gateway-config
+    patch: |-
+      - op: replace
+        path: /data/config.yaml
+        value: |
+          receivers:
+            otlp:
+              protocols:
+                grpc:
+                  endpoint: 0.0.0.0:4317
+                  max_recv_msg_size_mib: 16
+                http:
+                  endpoint: 0.0.0.0:4318
+
+          processors:
+            memory_limiter:
+              check_interval: 5s
+              limit_percentage: 80
+              spike_limit_percentage: 25
+
+            batch:
+              timeout: 10s
+              send_batch_size: 2048
+              send_batch_max_size: 4096
+
+            resource:
+              attributes:
+                - key: observability.gateway.processed_at
+                  value: ${env:HOSTNAME}
+                  action: upsert
+
+            # Transform for Datadog compatibility
+            transform/datadog:
+              metric_statements:
+                - context: datapoint
+                  statements:
+                    - set(attributes["env"], resource.attributes["deployment.environment"])
+                    - set(attributes["cluster"], resource.attributes["k8s.cluster.name"])
+                    - set(attributes["region"], resource.attributes["k8s.cluster.region"])
+
+          exporters:
+            prometheusremotewrite:
+              endpoint: http://prometheus.observability.svc.cluster.local:9090/api/v1/write
+              tls:
+                insecure: true
+              resource_to_telemetry_conversion:
+                enabled: true
+
+            loki:
+              endpoint: http://loki.observability.svc.cluster.local:3100/loki/api/v1/push
+              tls:
+                insecure: true
+              labels:
+                attributes:
+                  k8s.cluster.name: "cluster"
+                  k8s.namespace.name: "namespace"
+                  k8s.pod.name: "pod"
+                resource:
+                  k8s.cluster.name: "cluster"
+                  k8s.cluster.region: "region"
+
+            otlp/tempo:
+              endpoint: tempo.observability.svc.cluster.local:4317
+              tls:
+                insecure: true
+
+            # Datadog exporter
+            datadog:
+              api:
+                key: ${env:DD_API_KEY}
+                site: ${env:DD_SITE}
+              metrics:
+                resource_attributes_as_tags: true
+                instrumentation_scope_metadata_as_tags: true
+              traces:
+                span_name_as_resource_name: true
+                ignore_resources: []
+              logs:
+                dump_payloads: false
+              host_metadata:
+                enabled: true
+                tags:
+                  - "source:otel-gateway"
+                  - "architecture:federated"
+
+            debug:
+              verbosity: basic
+              sampling_initial: 2
+              sampling_thereafter: 1000
+
+          extensions:
+            health_check:
+              endpoint: 0.0.0.0:13133
+            pprof:
+              endpoint: 0.0.0.0:1777
+
+          service:
+            extensions: [health_check, pprof]
+            pipelines:
+              metrics:
+                receivers: [otlp]
+                processors: [memory_limiter, resource, transform/datadog, batch]
+                exporters: [prometheusremotewrite, datadog]
+
+              logs:
+                receivers: [otlp]
+                processors: [memory_limiter, resource, batch]
+                exporters: [loki, datadog]
+
+              traces:
+                receivers: [otlp]
+                processors: [memory_limiter, resource, batch]
+                exporters: [otlp/tempo, datadog]
+
+            telemetry:
+              logs:
+                level: info
+              metrics:
+                address: 0.0.0.0:8888
+
+  # Add Datadog env vars to the gateway deployment
+  - target:
+      kind: Deployment
+      name: otel-gateway
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: DD_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: datadog-credentials
+              key: api-key
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: DD_SITE
+          valueFrom:
+            secretKeyRef:
+              name: datadog-credentials
+              key: site
+              optional: true

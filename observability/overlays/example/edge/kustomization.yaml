@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Example edge overlay - customize for each cluster
+
+resources:
+  - ../../../base/edge
+
+patches:
+  # REQUIRED: Set cluster identification
+  - target:
+      kind: ConfigMap
+      name: edge-config
+    patch: |-
+      - op: replace
+        path: /data/CLUSTER_NAME
+        value: "production-us-east-1"
+      - op: replace
+        path: /data/CLUSTER_REGION
+        value: "us-east"
+      - op: replace
+        path: /data/CLUSTER_ENVIRONMENT
+        value: "production"
+      # Set this to your hub's external IP or DNS
+      - op: replace
+        path: /data/HUB_ENDPOINT
+        value: "otel-hub.example.com:4317"
+      # Set to "false" if using TLS
+      - op: replace
+        path: /data/HUB_INSECURE
+        value: "true"
+
+  # Example: Increase OTel agent resources for high-traffic clusters
+  - target:
+      kind: DaemonSet
+      name: otel-agent
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "1Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1"

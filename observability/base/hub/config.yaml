@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hub-config
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: observability
+    app.kubernetes.io/component: hub
+data:
+  # Retention settings
+  PROMETHEUS_RETENTION: "15d"
+  LOKI_RETENTION: "168h"
+  TEMPO_RETENTION: "72h"
+
+  # External access (set in overlay)
+  EXTERNAL_DOMAIN: ""

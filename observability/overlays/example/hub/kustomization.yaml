@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Example hub overlay - customize for your environment
+
+resources:
+  - ../../../base/hub
+
+# Uncomment to enable Datadog integration
+# components:
+#   - ../../../components/datadog
+
+# Customize namespace if needed
+# namespace: my-observability
+
+patches:
+  # Example: Customize Grafana password
+  - target:
+      kind: Secret
+      name: grafana-credentials
+    patch: |-
+      - op: replace
+        path: /stringData/admin-password
+        value: "your-secure-password"
+
+  # Example: Increase Prometheus retention
+  - target:
+      kind: Deployment
+      name: prometheus
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args/3
+        value: "--storage.tsdb.retention.time=30d"
+
+  # Example: Add resource limits for production
+  - target:
+      kind: Deployment
+      name: otel-gateway
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "4Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "2"

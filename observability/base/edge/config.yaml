@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edge-config
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: observability
+    app.kubernetes.io/component: edge
+data:
+  # Cluster identification - override in overlays
+  CLUSTER_NAME: "edge-cluster"
+  CLUSTER_REGION: "unknown"
+  CLUSTER_ENVIRONMENT: "production"
+
+  # Central hub connection
+  HUB_ENDPOINT: "otel-gateway.observability.svc.cluster.local:4317"
+  HUB_INSECURE: "true"
