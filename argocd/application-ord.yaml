@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mortgage-inference
+  namespace: argocd
+  labels:
+    project: presales-landing-zone
+    region: us-ord
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ccie7599/distributed-model-inference-lke.git
+    targetRevision: main
+    path: k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo-mortgage-inference
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

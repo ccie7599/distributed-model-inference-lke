@@ -1,0 +1,44 @@
+{
+  "products": [
+    {
+      "id": "conventional",
+      "name": "Conventional Loan",
+      "description": "Homebuyer with good credit score above 680 and stable employment looking for competitive interest rates. Has saved enough for a solid down payment of 5 to 20 percent. Established credit history with manageable debt-to-income ratio. May be purchasing a primary residence, second home, or investment property. Looking for flexibility in loan terms between 15 and 30 years with no government program requirements.",
+      "min_credit_score": 620,
+      "min_down_payment_pct": 3,
+      "highlights": ["No PMI with 20% down", "Flexible terms (15/20/30yr)", "Competitive rates for strong credit", "Primary, second home, or investment"]
+    },
+    {
+      "id": "fha",
+      "name": "FHA Loan",
+      "description": "First-time homebuyer with limited savings and a credit score in the low to mid 600s. May have had past credit challenges or a thin credit file. Looking to buy a modest home in a suburban or urban area with a small down payment of around 3.5 percent. Income is moderate, possibly a young professional or growing family getting started in homeownership for the first time.",
+      "min_credit_score": 580,
+      "min_down_payment_pct": 3.5,
+      "highlights": ["3.5% minimum down payment", "Credit scores from 580", "First-time buyer friendly", "Streamline refinance available"]
+    },
+    {
+      "id": "va",
+      "name": "VA Loan",
+      "description": "Active duty military service member, veteran, or military spouse looking to purchase a home. Has served in the armed forces including Army, Navy, Air Force, Marines, or Coast Guard. Eligible for Department of Veterans Affairs benefits. Wants to buy a primary residence with no down payment required and no private mortgage insurance.",
+      "min_credit_score": 0,
+      "min_down_payment_pct": 0,
+      "highlights": ["Zero down payment", "No PMI ever", "Military/veteran exclusive", "Competitive rates"]
+    },
+    {
+      "id": "jumbo",
+      "name": "Jumbo Loan",
+      "description": "High-income professional or household with combined earnings above 200 thousand dollars looking to purchase a luxury or high-value property priced above 750 thousand dollars. Excellent credit score above 720 with substantial assets and reserves. Purchasing in an expensive real estate market. Has significant savings for a large down payment of 10 to 20 percent.",
+      "min_credit_score": 700,
+      "min_down_payment_pct": 10,
+      "highlights": ["Loan amounts above conforming limits", "Luxury property financing", "Competitive rates for high earners", "Flexible down payment options"]
+    },
+    {
+      "id": "usda",
+      "name": "USDA Loan",
+      "description": "Moderate income family looking to purchase a home in a rural area or small town outside of major metropolitan centers. Household income is below the area median. Wants to live in a farming community, agricultural area, or designated rural zone. Looking for an affordable home with no down payment required in a less populated area.",
+      "min_credit_score": 640,
+      "min_down_payment_pct": 0,
+      "highlights": ["Zero down payment", "Below-market rates", "Rural and small-town eligible", "Income-based qualification"]
+    }
+  ]
+}

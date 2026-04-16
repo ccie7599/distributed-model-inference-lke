@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mortgage-inference-tls
+  namespace: demo-mortgage-inference
+spec:
+  secretName: mortgage-inference-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - mortgage-inference.connected-cloud.io

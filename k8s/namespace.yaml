@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: bert-inference
+  name: demo-mortgage-inference
   labels:
-    app: bert-inference
-    environment: production
+    project: mortgage-inference
+    tier: demo

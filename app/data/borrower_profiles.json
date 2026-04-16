@@ -1,0 +1,279 @@
+{
+  "profiles": [
+    {
+      "id": "bp-001",
+      "name": "Maria & Carlos Rodriguez",
+      "description": "Married couple, combined income $95,000. First-time homebuyers looking in suburban Detroit. Credit score around 650. Searching for a 3-bedroom home around $220,000. Limited savings with about $10,000 for down payment. Maria is a nurse and Carlos works in automotive manufacturing. No previous homeownership experience.",
+      "mortgage_product": "FHA",
+      "loan_amount": 212000,
+      "rate": 6.25,
+      "term_years": 30,
+      "outcome": "Approved - closed in 42 days",
+      "location": "Dearborn, MI"
+    },
+    {
+      "id": "bp-002",
+      "name": "James Mitchell",
+      "description": "Single professional, software engineer earning $130,000 annually. Excellent credit score of 780. Has $60,000 saved for down payment. Looking to buy a condo in downtown Detroit around $300,000. First-time buyer but strong financial position with no existing debt.",
+      "mortgage_product": "Conventional",
+      "loan_amount": 240000,
+      "rate": 5.75,
+      "term_years": 30,
+      "outcome": "Approved - closed in 35 days",
+      "location": "Detroit, MI"
+    },
+    {
+      "id": "bp-003",
+      "name": "Sarah & Tom Wilson",
+      "description": "Army veteran Tom and wife Sarah, combined income $85,000. Tom served 8 years active duty in the Army. Credit score 710. Looking for a family home in Grand Rapids around $250,000. No down payment saved. Two children, looking for good school district.",
+      "mortgage_product": "VA",
+      "loan_amount": 250000,
+      "rate": 5.50,
+      "term_years": 30,
+      "outcome": "Approved - closed in 38 days",
+      "location": "Grand Rapids, MI"
+    },
+    {
+      "id": "bp-004",
+      "name": "Priya Sharma",
+      "description": "Single first-time buyer, medical resident earning $65,000. Credit score 640 with student loan debt. Looking for a starter home around $180,000 in Ann Arbor suburbs. Only $8,000 saved for down payment. Young professional just starting career.",
+      "mortgage_product": "FHA",
+      "loan_amount": 173700,
+      "rate": 6.50,
+      "term_years": 30,
+      "outcome": "Approved - closed in 45 days",
+      "location": "Ypsilanti, MI"
+    },
+    {
+      "id": "bp-005",
+      "name": "Robert & Lisa Chen",
+      "description": "Dual income household, both physicians with combined income of $420,000. Excellent credit scores above 760. Looking for a luxury home in Bloomfield Hills priced around $950,000. Have $200,000 available for down payment. Relocating from Chicago for hospital positions.",
+      "mortgage_product": "Jumbo",
+      "loan_amount": 750000,
+      "rate": 6.00,
+      "term_years": 30,
+      "outcome": "Approved - closed in 50 days",
+      "location": "Bloomfield Hills, MI"
+    },
+    {
+      "id": "bp-006",
+      "name": "Kevin O'Brien",
+      "description": "Retired Navy Chief Petty Officer, pension income $55,000 plus part-time consulting at $30,000. Credit score 730. Looking for a home near the VA hospital in Ann Arbor around $280,000. 20 years of military service. Wants a single-story ranch home.",
+      "mortgage_product": "VA",
+      "loan_amount": 280000,
+      "rate": 5.25,
+      "term_years": 30,
+      "outcome": "Approved - closed in 30 days",
+      "location": "Ann Arbor, MI"
+    },
+    {
+      "id": "bp-007",
+      "name": "Amanda & Derek Foster",
+      "description": "Young married couple, combined income $110,000. Good credit at 720. This is their second home purchase, upgrading from a starter condo. Looking for a 4-bedroom home around $350,000 in Novi. Have equity from current home sale for 15% down payment.",
+      "mortgage_product": "Conventional",
+      "loan_amount": 297500,
+      "rate": 5.85,
+      "term_years": 30,
+      "outcome": "Approved - closed in 40 days",
+      "location": "Novi, MI"
+    },
+    {
+      "id": "bp-008",
+      "name": "Marcus Johnson",
+      "description": "Single father, warehouse supervisor earning $52,000. Credit score 610 with some past collections now resolved. First-time buyer looking for affordable housing around $150,000 in Lansing. Has $6,000 saved. Stable employment for 5 years at the same company.",
+      "mortgage_product": "FHA",
+      "loan_amount": 144750,
+      "rate": 6.75,
+      "term_years": 30,
+      "outcome": "Approved - closed in 48 days",
+      "location": "Lansing, MI"
+    },
+    {
+      "id": "bp-009",
+      "name": "Jennifer & Michael Park",
+      "description": "Married couple, combined income $160,000. Both work in automotive industry. Credit scores around 740. Looking for a home in Troy around $400,000 with 20% down payment saved. Second-time buyers, selling current home in Sterling Heights. Want top-rated school district.",
+      "mortgage_product": "Conventional",
+      "loan_amount": 320000,
+      "rate": 5.65,
+      "term_years": 30,
+      "outcome": "Approved - closed in 32 days",
+      "location": "Troy, MI"
+    },
+    {
+      "id": "bp-010",
+      "name": "David & Karen Mueller",
+      "description": "Farming family with household income of $62,000 looking to purchase a home in rural Gratiot County. Moderate credit score of 660. Want a home with some acreage around $175,000 in a small agricultural community. Income below area median. Currently renting on a neighboring farm.",
+      "mortgage_product": "USDA",
+      "loan_amount": 175000,
+      "rate": 5.75,
+      "term_years": 30,
+      "outcome": "Approved - closed in 55 days",
+      "location": "Alma, MI"
+    },
+    {
+      "id": "bp-011",
+      "name": "Angela Washington",
+      "description": "Single professional, teacher earning $58,000 with credit score of 670. First-time buyer looking for a home around $190,000 in Kalamazoo. Has $9,000 saved from a down payment assistance program. Wants to stop renting and build equity. Stable 8-year employment.",
+      "mortgage_product": "FHA",
+      "loan_amount": 183350,
+      "rate": 6.35,
+      "term_years": 30,
+      "outcome": "Approved - closed in 44 days",
+      "location": "Kalamazoo, MI"
+    },
+    {
+      "id": "bp-012",
+      "name": "Steven & Amy Nakamura",
+      "description": "High-income tech couple, combined earnings $350,000. Excellent credit at 790. Looking for a waterfront property on Lake Michigan priced around $1,200,000. Have substantial savings and investment portfolio. Want a vacation home that could become primary residence eventually.",
+      "mortgage_product": "Jumbo",
+      "loan_amount": 960000,
+      "rate": 6.15,
+      "term_years": 30,
+      "outcome": "Approved - closed in 55 days",
+      "location": "South Haven, MI"
+    },
+    {
+      "id": "bp-013",
+      "name": "Chris Taylor",
+      "description": "Marine Corps veteran, currently working as a police officer earning $72,000. Credit score 700. Served 6 years active duty. Looking for a home around $230,000 in Traverse City. Wants to use VA loan benefit for zero down. Single, first home purchase.",
+      "mortgage_product": "VA",
+      "loan_amount": 230000,
+      "rate": 5.40,
+      "term_years": 30,
+      "outcome": "Approved - closed in 33 days",
+      "location": "Traverse City, MI"
+    },
+    {
+      "id": "bp-014",
+      "name": "Rachel & Brian Kowalski",
+      "description": "Married couple in their 40s, combined income $95,000. Good credit at 710. Looking to buy a home in small-town Cadillac, Michigan around $160,000. Brian is a mechanic and Rachel manages a local restaurant. Want to be closer to family in northern Michigan. Moderate savings.",
+      "mortgage_product": "Conventional",
+      "loan_amount": 144000,
+      "rate": 5.95,
+      "term_years": 30,
+      "outcome": "Approved - closed in 36 days",
+      "location": "Cadillac, MI"
+    },
+    {
+      "id": "bp-015",
+      "name": "Omar & Fatima Hassan",
+      "description": "Immigrant family, combined income $78,000. Credit score 630, building credit history in the US for 3 years. First-time homebuyers looking for a family home around $200,000 in Dearborn. Omar works in engineering and Fatima is a translator. Want to plant roots in their community.",
+      "mortgage_product": "FHA",
+      "loan_amount": 193000,
+      "rate": 6.45,
+      "term_years": 30,
+      "outcome": "Approved - closed in 50 days",
+      "location": "Dearborn, MI"
+    },
+    {
+      "id": "bp-016",
+      "name": "Patricia Gonzalez",
+      "description": "School administrator earning $48,000 looking for an affordable home in rural Isabella County. Credit score 650. Income qualifies as below area median. Wants a quiet community near Mount Pleasant around $130,000. Single, looking for a smaller 2-bedroom home with a yard.",
+      "mortgage_product": "USDA",
+      "loan_amount": 130000,
+      "rate": 5.50,
+      "term_years": 30,
+      "outcome": "Approved - closed in 52 days",
+      "location": "Mount Pleasant, MI"
+    },
+    {
+      "id": "bp-017",
+      "name": "Daniel & Michelle Brooks",
+      "description": "Established couple, combined income $185,000. Excellent credit at 750. Upgrading to a larger home in Rochester Hills around $500,000. Selling current home with significant equity for 25% down. Daniel is a financial analyst and Michelle is a dental hygienist. Third home purchase.",
+      "mortgage_product": "Conventional",
+      "loan_amount": 375000,
+      "rate": 5.55,
+      "term_years": 30,
+      "outcome": "Approved - closed in 28 days",
+      "location": "Rochester Hills, MI"
+    },
+    {
+      "id": "bp-018",
+      "name": "Tyler Reed",
+      "description": "Air Force veteran, 12 years of service, now working as an airline pilot earning $95,000. Credit score 740. Looking for a home near Detroit Metro Airport around $320,000. Eligible for VA benefits. Recently married, wants to settle down near his base of operations.",
+      "mortgage_product": "VA",
+      "loan_amount": 320000,
+      "rate": 5.35,
+      "term_years": 30,
+      "outcome": "Approved - closed in 35 days",
+      "location": "Romulus, MI"
+    },
+    {
+      "id": "bp-019",
+      "name": "Sandra & George Whitfield",
+      "description": "Executive couple, George is a hospital CEO earning $280,000 and Sandra is an attorney earning $190,000. Combined income $470,000. Credit scores above 800. Looking for an estate property in Grosse Pointe around $1,500,000. Have substantial assets and stock portfolio for down payment.",
+      "mortgage_product": "Jumbo",
+      "loan_amount": 1200000,
+      "rate": 5.90,
+      "term_years": 30,
+      "outcome": "Approved - closed in 60 days",
+      "location": "Grosse Pointe, MI"
+    },
+    {
+      "id": "bp-020",
+      "name": "Ashley & Ryan Thompson",
+      "description": "Young couple, combined income $72,000. Credit score 620. First-time buyers excited about homeownership. Looking for a starter home around $165,000 in Flint suburbs. Limited savings at $7,000. Both work in healthcare, Ashley as a CNA and Ryan as an EMT.",
+      "mortgage_product": "FHA",
+      "loan_amount": 159225,
+      "rate": 6.60,
+      "term_years": 30,
+      "outcome": "Approved - closed in 46 days",
+      "location": "Grand Blanc, MI"
+    },
+    {
+      "id": "bp-021",
+      "name": "Richard & Carol Peterson",
+      "description": "Semi-retired couple with pension and social security income totaling $56,000. Credit score 680. Want to downsize to a small home in rural Cheboygan County around $140,000. Currently own a larger home outright. Looking for peaceful retirement community in northern Michigan countryside.",
+      "mortgage_product": "USDA",
+      "loan_amount": 140000,
+      "rate": 5.65,
+      "term_years": 15,
+      "outcome": "Approved - closed in 40 days",
+      "location": "Cheboygan, MI"
+    },
+    {
+      "id": "bp-022",
+      "name": "Nadia & Alex Petrov",
+      "description": "Dual income professionals, combined $140,000. Good credit at 730. Looking for a home in Canton Township around $370,000. Both work in automotive engineering. Have 10% down payment saved. Second home purchase, relocating from Ohio for job opportunity with major automaker.",
+      "mortgage_product": "Conventional",
+      "loan_amount": 333000,
+      "rate": 5.80,
+      "term_years": 30,
+      "outcome": "Approved - closed in 34 days",
+      "location": "Canton, MI"
+    },
+    {
+      "id": "bp-023",
+      "name": "William Cooper",
+      "description": "Successful business owner, sole proprietor of a construction company netting $250,000 annually. Credit score 755. Looking for a large custom home on acreage in Oakland County around $800,000. Has 20% down payment ready. Experienced buyer, this would be his fourth property.",
+      "mortgage_product": "Jumbo",
+      "loan_amount": 640000,
+      "rate": 6.10,
+      "term_years": 30,
+      "outcome": "Approved - closed in 48 days",
+      "location": "Clarkston, MI"
+    },
+    {
+      "id": "bp-024",
+      "name": "Jasmine Williams",
+      "description": "Single mother, registered nurse earning $68,000. Credit score 660 improving after divorce. First-time buyer looking for a safe neighborhood in Southfield around $210,000. Has $8,500 saved plus employer down payment assistance. Two school-age children, prioritizing good schools.",
+      "mortgage_product": "FHA",
+      "loan_amount": 202650,
+      "rate": 6.40,
+      "term_years": 30,
+      "outcome": "Approved - closed in 43 days",
+      "location": "Southfield, MI"
+    },
+    {
+      "id": "bp-025",
+      "name": "Eric & Dana Lindstrom",
+      "description": "Married couple, combined income $125,000. Very good credit at 740. Eric is a senior accountant and Dana is a project manager. Looking to buy a home in Plymouth around $380,000 with 15% down payment. Move-up buyers selling their first home in Livonia. Want more space for growing family.",
+      "mortgage_product": "Conventional",
+      "loan_amount": 323000,
+      "rate": 5.70,
+      "term_years": 30,
+      "outcome": "Approved - closed in 31 days",
+      "location": "Plymouth, MI"
+    }
+  ]
+}

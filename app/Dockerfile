@@ -16,12 +16,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create app directory
 WORKDIR /app
 
+# Upgrade pip to fix resolver bug in base image
+RUN pip3 install --no-cache-dir --upgrade pip
+
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Install optimum for ONNX export
-RUN pip3 install --no-cache-dir optimum[onnxruntime-gpu]
+RUN pip3 install --no-cache-dir "optimum[onnxruntime-gpu]"
 
 # Download and export BERT model to ONNX format
 RUN mkdir -p /models/bert-base-uncased && \
@@ -29,8 +32,9 @@ RUN mkdir -p /models/bert-base-uncased && \
     model = ORTModelForFeatureExtraction.from_pretrained('google-bert/bert-base-uncased', export=True); \
     model.save_pretrained('/models/bert-base-uncased')"
 
-# Copy application code
+# Copy application code and data
 COPY inference_server.py .
+COPY data/ ./data/
 
 # Expose ports
 EXPOSE 8080

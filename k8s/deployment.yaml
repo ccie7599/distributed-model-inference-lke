@@ -1,45 +1,42 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: bert-inference
-  namespace: bert-inference
+  name: mortgage-inference
+  namespace: demo-mortgage-inference
   labels:
-    app: bert-inference
+    app: mortgage-inference
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: bert-inference
+      app: mortgage-inference
   template:
     metadata:
       labels:
-        app: bert-inference
+        app: mortgage-inference
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         prometheus.io/path: "/metrics"
     spec:
-      # Schedule on GPU nodes (label GPU nodes with: kubectl label node <node-name> nvidia.com/gpu.present=true)
+      serviceAccountName: app-vault-access
+      imagePullSecrets:
+        - name: harbor-creds
       nodeSelector:
         nvidia.com/gpu.present: "true"
-
-      # Ensure pods don't get scheduled on nodes without GPUs
       tolerations:
         - key: "nvidia.com/gpu"
           operator: "Exists"
           effect: "NoSchedule"
 
       containers:
-        - name: bert-inference
-          # Custom GPU image with BERT model baked in
-          image: brianapley/bert-inference:gpu-v2
+        - name: mortgage-inference
+          image: harbor.harbor.svc.cluster.local/presales/mortgage-inference:v1
           imagePullPolicy: Always
-
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
-
           env:
             - name: MODEL_PATH
               value: "/models/bert-base-uncased/model.onnx"
@@ -47,7 +44,16 @@ spec:
               value: "CUDAExecutionProvider"
             - name: MAX_SEQUENCE_LENGTH
               value: "512"
-
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://$(NODE_IP):4318"
+            - name: OTEL_SERVICE_NAME
+              value: "mortgage-inference"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "deployment.environment=presales,service.namespace=demo-mortgage-inference"
           resources:
             requests:
               memory: "8Gi"
@@ -57,24 +63,53 @@ spec:
               memory: "12Gi"
               cpu: "4"
               nvidia.com/gpu: "1"
-
           livenessProbe:
             httpGet:
               path: /health
               port: http
             initialDelaySeconds: 120
             periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-
           readinessProbe:
             httpGet:
               path: /health
               port: http
             initialDelaySeconds: 90
             periodSeconds: 5
-            timeoutSeconds: 3
             failureThreshold: 5
 
-      # Graceful shutdown
+        - name: tls-proxy
+          image: nginx:alpine
+          ports:
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /etc/nginx/ssl
+              readOnly: true
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
+            - name: demo-html
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: mortgage-inference-tls
+        - name: nginx-conf
+          configMap:
+            name: tls-proxy-conf
+        - name: demo-html
+          configMap:
+            name: demo-html
+
       terminationGracePeriodSeconds: 30

@@ -1,18 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: bert-inference
-  namespace: bert-inference
+  name: mortgage-inference
+  namespace: demo-mortgage-inference
   labels:
-    app: bert-inference
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
-    prometheus.io/path: "/metrics"
+    app: mortgage-inference
 spec:
   type: ClusterIP
   selector:
-    app: bert-inference
+    app: mortgage-inference
   ports:
     - name: http
       port: 80
@@ -22,28 +18,22 @@ spec:
       port: 8080
       targetPort: 8080
       protocol: TCP
-    - name: grpc
-      port: 50051
-      targetPort: 50051
-      protocol: TCP
-
 ---
-# LoadBalancer service for external access (optional)
 apiVersion: v1
 kind: Service
 metadata:
-  name: bert-inference-external
-  namespace: bert-inference
+  name: mortgage-inference-nb
+  namespace: demo-mortgage-inference
   labels:
-    app: bert-inference
+    app: mortgage-inference
   annotations:
-    service.beta.kubernetes.io/linode-loadbalancer-throttle: "20"
+    service.beta.kubernetes.io/linode-loadbalancer-throttle: "0"
 spec:
   type: LoadBalancer
   selector:
-    app: bert-inference
+    app: mortgage-inference
   ports:
-    - name: http
-      port: 80
-      targetPort: 8080
+    - name: https
+      port: 443
+      targetPort: 443
       protocol: TCP
