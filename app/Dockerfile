@@ -26,11 +26,16 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Install optimum for ONNX export
 RUN pip3 install --no-cache-dir "optimum[onnxruntime-gpu]"
 
-# Download and export BERT model to ONNX format
+# Download and export BERT model to ONNX format; cache tokenizer for offline runtime
 RUN mkdir -p /models/bert-base-uncased && \
     python3 -c "from optimum.onnxruntime import ORTModelForFeatureExtraction; \
     model = ORTModelForFeatureExtraction.from_pretrained('google-bert/bert-base-uncased', export=True); \
-    model.save_pretrained('/models/bert-base-uncased')"
+    model.save_pretrained('/models/bert-base-uncased')" && \
+    python3 -c "from transformers import BertTokenizer; BertTokenizer.from_pretrained('google-bert/bert-base-uncased')"
+
+# Use cached tokenizer/model at runtime — no egress required at startup
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
 
 # Copy application code and data
 COPY inference_server.py .
