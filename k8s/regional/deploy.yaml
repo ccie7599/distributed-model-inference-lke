@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-mortgage-inference
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tls-proxy-conf
+  namespace: demo-mortgage-inference
+data:
+  default.conf: |
+    log_format akamai '$http_true_client_ip - $remote_addr [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" token=$arg_token cookie=$cookie_auth_token';
+
+    map $arg_token $set_auth_cookie {
+        "rdVk3_dRXJsrjmASFDxdL1L5mCpxkdn7" "auth_token=rdVk3_dRXJsrjmASFDxdL1L5mCpxkdn7; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400";
+        default "";
+    }
+
+    server {
+        listen 443 ssl;
+        server_name mortgage-inference.connected-cloud.io;
+
+        ssl_certificate /etc/nginx/ssl/tls.crt;
+        ssl_certificate_key /etc/nginx/ssl/tls.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+
+        access_log /var/log/nginx/access.log akamai;
+
+        set $deny 1;
+        if ($arg_token = "rdVk3_dRXJsrjmASFDxdL1L5mCpxkdn7") { set $deny 0; }
+        if ($cookie_auth_token = "rdVk3_dRXJsrjmASFDxdL1L5mCpxkdn7") { set $deny 0; }
+        if ($uri = /health) { set $deny 0; }
+        if ($uri = /metrics) { set $deny 0; }
+        if ($deny) { return 401; }
+
+        add_header Set-Cookie $set_auth_cookie;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        location / { try_files $uri $uri/ @inference; }
+
+        location @inference {
+            proxy_pass http://127.0.0.1:8080;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 300s;
+        }
+
+        location /v1/ {
+            proxy_pass http://127.0.0.1:8080;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 300s;
+        }
+
+        location = /health { proxy_pass http://127.0.0.1:8080; proxy_set_header Host $host; }
+        location = /metrics { proxy_pass http://127.0.0.1:8080; proxy_set_header Host $host; }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mortgage-inference
+  namespace: demo-mortgage-inference
+  labels:
+    app: mortgage-inference
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mortgage-inference
+  template:
+    metadata:
+      labels:
+        app: mortgage-inference
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      containers:
+        - name: mortgage-inference
+          image: brianapley/mortgage-inference:ce7d2d0
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: MODEL_PATH
+              value: "/models/bert-base-uncased/model.onnx"
+            - name: ONNX_EXECUTION_PROVIDER
+              value: "CUDAExecutionProvider"
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "500m"
+              nvidia.com/gpu: "1"
+            limits:
+              memory: "8Gi"
+              cpu: "2"
+              nvidia.com/gpu: "1"
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 90
+            periodSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 120
+            periodSeconds: 10
+
+        - name: tls-proxy
+          image: nginx:alpine
+          ports:
+            - name: https
+              containerPort: 443
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /etc/nginx/ssl
+              readOnly: true
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
+            - name: demo-html
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: mortgage-inference-tls
+        - name: nginx-conf
+          configMap:
+            name: tls-proxy-conf
+        - name: demo-html
+          configMap:
+            name: demo-html
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mortgage-inference
+  namespace: demo-mortgage-inference
+spec:
+  type: ClusterIP
+  selector:
+    app: mortgage-inference
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mortgage-inference-nb
+  namespace: demo-mortgage-inference
+  annotations:
+    service.beta.kubernetes.io/linode-loadbalancer-throttle: "0"
+spec:
+  type: LoadBalancer
+  selector:
+    app: mortgage-inference
+  ports:
+    - name: https
+      port: 443
+      targetPort: 443
