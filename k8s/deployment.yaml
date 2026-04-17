@@ -43,7 +43,7 @@ spec:
 
       containers:
         - name: mortgage-inference
-          image: harbor.harbor.svc.cluster.local/presales/mortgage-inference:ce7d2d0
+          image: brianapley/mortgage-inference:ce7d2d0
           imagePullPolicy: Always
           ports:
             - name: http
