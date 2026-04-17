@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tls-proxy-conf
+  name: tls-proxy-conf-template
   namespace: demo-mortgage-inference
 data:
-  default.conf: |
+  default.conf.tmpl: |
     log_format akamai '$http_true_client_ip - $remote_addr [$time_local] "$request" '
                       '$status $body_bytes_sent "$http_referer" '
                       '"$http_user_agent" token=$arg_token cookie=$cookie_auth_token';
 
     map $arg_token $set_auth_cookie {
-        "rdVk3_dRXJsrjmASFDxdL1L5mCpxkdn7" "auth_token=rdVk3_dRXJsrjmASFDxdL1L5mCpxkdn7; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400";
+        "__AUTH_TOKEN__" "auth_token=__AUTH_TOKEN__; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400";
         default "";
     }
 
@@ -26,8 +26,8 @@ data:
 
         # Token auth: query string or cookie
         set $deny 1;
-        if ($arg_token = "rdVk3_dRXJsrjmASFDxdL1L5mCpxkdn7") { set $deny 0; }
-        if ($cookie_auth_token = "rdVk3_dRXJsrjmASFDxdL1L5mCpxkdn7") { set $deny 0; }
+        if ($arg_token = "__AUTH_TOKEN__") { set $deny 0; }
+        if ($cookie_auth_token = "__AUTH_TOKEN__") { set $deny 0; }
         if ($uri = /health) { set $deny 0; }
         if ($uri = /metrics) { set $deny 0; }
         if ($deny) { return 401; }
@@ -42,7 +42,6 @@ data:
             try_files $uri $uri/ @inference;
         }
 
-        # Inference API fallback
         location @inference {
             proxy_pass http://127.0.0.1:8080;
             proxy_set_header Host $host;

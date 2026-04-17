@@ -18,6 +18,18 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         prometheus.io/path: "/metrics"
+        # Vault Agent Injector — write the auth token to /vault/secrets/token
+        # on every container in the pod that opts in via shared volume.
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/agent-pre-populate-only: "true"
+        vault.hashicorp.com/role: "api"
+        vault.hashicorp.com/agent-inject-secret-token: "api/data/mortgage-inference/config"
+        vault.hashicorp.com/agent-inject-template-token: |
+          {{- with secret "api/data/mortgage-inference/config" -}}
+          {{ .Data.data.AUTH_TOKEN }}
+          {{- end }}
+        # Render into the tls-proxy container so the init render step can read it.
+        vault.hashicorp.com/agent-inject-containers: "tls-proxy-render"
     spec:
       serviceAccountName: app-vault-access
       imagePullSecrets:
@@ -29,9 +41,30 @@ spec:
           operator: "Exists"
           effect: "NoSchedule"
 
+      initContainers:
+        # Render the nginx config from the ConfigMap template, substituting the
+        # token that Vault Agent wrote to /vault/secrets/token. The rendered
+        # file lands in an emptyDir that the nginx sidecar mounts as its conf.d.
+        - name: tls-proxy-render
+          image: nginx:alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              TOKEN=$(cat /vault/secrets/token)
+              sed "s|__AUTH_TOKEN__|${TOKEN}|g" /config-template/default.conf.tmpl \
+                > /config-rendered/default.conf
+              echo "Rendered nginx config (token length: ${#TOKEN})"
+          volumeMounts:
+            - name: config-template
+              mountPath: /config-template
+              readOnly: true
+            - name: config-rendered
+              mountPath: /config-rendered
+
       containers:
         - name: mortgage-inference
-          image: harbor.harbor.svc.cluster.local/presales/mortgage-inference:v1
+          image: harbor.harbor.svc.cluster.local/presales/mortgage-inference:__GIT_SHA__
           imagePullPolicy: Always
           ports:
             - name: http
@@ -87,7 +120,7 @@ spec:
             - name: tls-certs
               mountPath: /etc/nginx/ssl
               readOnly: true
-            - name: nginx-conf
+            - name: config-rendered
               mountPath: /etc/nginx/conf.d
               readOnly: true
             - name: demo-html
@@ -105,9 +138,11 @@ spec:
         - name: tls-certs
           secret:
             secretName: mortgage-inference-tls
-        - name: nginx-conf
+        - name: config-template
           configMap:
-            name: tls-proxy-conf
+            name: tls-proxy-conf-template
+        - name: config-rendered
+          emptyDir: {}
         - name: demo-html
           configMap:
             name: demo-html
