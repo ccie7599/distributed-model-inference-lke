@@ -43,7 +43,7 @@ spec:
 
       containers:
         - name: mortgage-inference
-          image: brianapley/mortgage-inference:ce7d2d0
+          image: brianapley/mortgage-inference:a664b30
           imagePullPolicy: Always
           ports:
             - name: http
